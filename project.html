@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Result System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    input, select {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button.delete {
+      background: #dc3545;
+    }
+    .result-item {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .subject {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 3px;
+      margin: 2px;
+      font-size: 14px;
+    }
+    .pass { background: #d4edda; color: #155724; }
+    .fail { background: #f8d7da; color: #721c24; }
+    .stats {
+      margin: 20px 0;
+      padding: 15px;
+      background: #e2e3e5;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Student Result System</h1>
+
+  <div class="card">
+    <h2>Add New Result</h2>
+    <input type="text" id="studentName" placeholder="Student Name">
+
+    <h3>Subject Results</h3>
+    <div class="subjects-grid">
+      <div><label>Database</label><select id="Database"><option value="pass">Pass</option><option value="fail">Fail</option></select></div>
+      <div><label>Networking</label><select id="Networking"><option value="pass">Pass</option><option value="fail">Fail</option></select></div>
+      <div><label>Python</label><select id="Python"><option value="pass">Pass</option><option value="fail">Fail</option></select></div>
+      <div><label>Innovation</label><select id="Innovation"><option value="pass">Pass</option><option value="fail">Fail</option></select></div>
+      <div><label>Nepal</label><select id="Nepal"><option value="pass">Pass</option><option value="fail">Fail</option></select></div>
+      <div><label>System Software</label><select id="System Software"><option value="pass">Pass</option><option value="fail">Fail</option></select></div>
+    </div>
+
+    <button id="saveBtn">Save Result</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div id="resultsList"></div>
+
+  <script>
+    const subjects = ['Database', 'Networking', 'Python', 'Innovation', 'Nepal', 'System Software'];
+    let results = JSON.parse(localStorage.getItem('studentResults')) || [];
+
+    function addResult() {
+      const name = document.getElementById('studentName').value.trim();
+      if (!name) {
+        alert("Please enter student name");
+        return;
+      }
+
+      const result = {
+        id: Date.now(),
+        name,
+        subjects: {},
+        passCount: 0,
+        failCount: 0,
+        grade: ""
+      };
+
+      let pass = 0;
+      let fail = 0;
+
+      subjects.forEach(subject => {
+        const status = document.getElementById(subject).value;
+        result.subjects[subject] = status;
+        if (status === 'pass') pass++;
+        else fail++;
+      });
+
+      result.passCount = pass;
+      result.failCount = fail;
+
+      if (pass === 6) result.grade = "A";
+      else if (pass >= 4) result.grade = "B";
+      else if (pass >= 2) result.grade = "C";
+      else result.grade = "F";
+
+      console.log("Captured result:", result);  // Debugging line
+      results.push(result);
+      console.log("Saving to localStorage:", JSON.stringify(results)); // Debugging line
+      localStorage.setItem('studentResults', JSON.stringify(results));
+      renderResults();
+      document.getElementById('studentName').value = '';
+    }
+
+    function renderResults() {
+      const container = document.getElementById('resultsList');
+      container.innerHTML = '';
+
+      results.forEach(result => {
+        const div = document.createElement('div');
+        div.className = 'result-item';
+
+        let subjectsHTML = '';
+        for (const [subject, status] of Object.entries(result.subjects)) {
+          subjectsHTML += `<span class="subject ${status}">${subject}: ${status}</span>`;
+        }
+
+        div.innerHTML = `
+          <div>
+            <strong>${result.name}</strong><br>
+            ${subjectsHTML}<br>
+            <strong>Passed:</strong> ${result.passCount} |
+            <strong>Failed:</strong> ${result.failCount} |
+            <strong>Grade:</strong> ${result.grade}
+          </div>
+          <button class="delete" onclick="deleteResult(${result.id})">Delete</button>
+        `;
+        container.appendChild(div);
+      });
+
+      updateStats();
+    }
+
+    function deleteResult(id) {
+      results = results.filter(r => r.id !== id);
+      localStorage.setItem('studentResults', JSON.stringify(results));
+      renderResults();
+    }
+
+    function updateStats() {
+      const total = results.length;
+      const passedAll = results.filter(r => r.passCount === 6).length;
+      const failedSome = total - passedAll;
+
+      document.getElementById('stats').innerHTML = `
+        <strong>Statistics:</strong>
+        Total Students: ${total} |
+        Passed All: ${passedAll} |
+        Failed Some: ${failedSome}
+      `;
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', addResult);
+    renderResults();
+  </script>
+
+</body>
+</html>
